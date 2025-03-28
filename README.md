@@ -12,6 +12,7 @@ Create anaconda environment:
 
     pip install ipython
     conda install -y loguru requests
+    conda install -y -c conda-forge geojson geomet
 
 
 ### Installation
