@@ -15,24 +15,69 @@ import requests
 import CDSE.access_token_credentials as CDSE_atc
 import CDSE.CDSE_utils as CDSE_utils
 
+import CDSE.geojson_utils as CDSE_geo
+
 from loguru import logger
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+# THIS SHOULD ALL BE USER INPUT DATA
+
 # define path to geojson file for search area
 geojson_path = 'roi_svalbard.geojson'
+geojson_path = 'roi_multiple.geojson'
 
-# read geojson file (not needed later, included in making AOI polygon)
-R = CDSE_utils.read_geojson(geojson_path)
+# define search parameters
+start_date = "2022-06-01"
+end_date = "2022-06-03"
+
+# sensor
+data_collection = "SENTINEL-1"
+
+# maximum cloud cover
+max_cloud = 65
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# read aoi from geojson path
+aoi = CDSE_geo.geojson_to_wkt(CDSE_geo.read_geojson(geojson_path))
+
+# manual example AOIs
+##aoi = "POLYGON((4.220581 50.958859,4.521264 50.953236,4.545977 50.906064,4.541858 50.802029,4.489685 50.763825,4.23843 50.767734,4.192435 50.806369,4.189689 50.907363,4.220581 50.958859))"
+##aoi = "POLYGON((-15 78, -10 78, -10 77, -15 77, -15 78))"
 
 
-aoi = CDSE_utils.make_CDSE_AOI_from_geojson(geojson_path)
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# BUILD THE QUERY URL
+
+# build query string: sensor
+query_string_sensor = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name eq '{data_collection}'"
+
+# build query string: area
+query_string_area =  f"OData.CSC.Intersects(area=geography'SRID=4326;{aoi}')"
+
+# build query string: time
+query_string_time = f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
+
+# build full query string
+query_string = f"{query_string_sensor} and {query_string_area} and {query_string_time}"
+
+logger.info(f"Full quer string: {query_string}")
+
+
+# search the data collection
+response_dict = requests.get(query_string).json()
 
 
 
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 
-
+# ONLY NEEDED FOR DOWNLOAD
 
 # get username and password
 CDSE_user = "johannes.p.lohse@uit.no"
@@ -41,48 +86,20 @@ CDSE_passwd = "Dummy_Password123"
 # generate access token (for download)
 access_token = CDSE_atc.get_access_token(CDSE_user, CDSE_passwd)
 
-# define search parameters
-start_date = "2022-06-01"
-end_date = "2022-06-03"
-
-data_collection = "SENTINEL-1"
-##data_collection = "SENTINEL-2"
-
-max_cloud = 65
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 
 
 
-aoi = "POLYGON((4.220581 50.958859,4.521264 50.953236,4.545977 50.906064,4.541858 50.802029,4.489685 50.763825,4.23843 50.767734,4.192435 50.806369,4.189689 50.907363,4.220581 50.958859))"
 
-aoi = "POLYGON((-15 78, -10 78, -10 77, -15 77, -15 78))"
 
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# build basic query string
-query_string_base = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name eq '{data_collection}'"
-
-# build query string: area
-query_string_area =  f"OData.CSC.Intersects(area=geography'SRID=4326;{aoi}')"
-
-# build query string: time
-query_string_time = f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
 
 
 
-# build query string: time
-query_string_time = f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
-
-
-
-# build full query string
-query_string = f"{query_string_base} and {query_string_area} and {query_string_time}"
-
-
-
-# search the data collection
-response_dict = requests.get(query_string).json()
 
 
 
