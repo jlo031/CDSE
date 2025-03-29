@@ -17,6 +17,9 @@ import CDSE.CDSE_utils as CDSE_utils
 
 import CDSE.geojson_utils as CDSE_geo
 
+import CDSE.CDSE_search_and_download as CDSE_sd
+
+
 from loguru import logger
 
 # -------------------------------------------------------------------------- #
@@ -33,10 +36,14 @@ start_date = "2022-06-01"
 end_date = "2022-06-03"
 
 # sensor
-data_collection = "SENTINEL-1"
+data_collection = "SENTINEL-2"
 
 # maximum cloud cover
-max_cloud = 65
+max_cloud = 55
+
+# get username and password
+CDSE_user = "johannes.p.lohse@uit.no"
+CDSE_passwd = "Dummy_Password123"
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
@@ -58,38 +65,68 @@ aoi = CDSE_geo.geojson_to_wkt(CDSE_geo.read_geojson(geojson_path))
 query_string_sensor = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name eq '{data_collection}'"
 
 # build query string: area
-query_string_area =  f"OData.CSC.Intersects(area=geography'SRID=4326;{aoi}')"
+query_string_area =  " and " + f"OData.CSC.Intersects(area=geography'SRID=4326;{aoi}')"
 
 # build query string: time
-query_string_time = f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
+query_string_time = " and " + f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
+
+# build query string: max cloud cover
+if data_collection == 'SENTINEL-2' and max_cloud is not None:
+    query_string_max_cloud = " and " f"Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {max_cloud})"
+else:
+    query_string_max_cloud = ""
+
 
 # build full query string
-query_string = f"{query_string_sensor} and {query_string_area} and {query_string_time}"
+query_string = f"{query_string_sensor}{query_string_area}{query_string_time}{query_string_max_cloud}"
 
-logger.info(f"Full quer string: {query_string}")
+logger.info(f"Full query string: {query_string}")
 
 
 # search the data collection
 response_dict = requests.get(query_string).json()
+product_list = response_dict['value']
+
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# try download function for one product
+
+product = response_dict['value'][3]
+
+CDSE_sd.download_product_from_cdse(product,'/home/johannes/', CDSE_user, CDSE_passwd)
+
 
 
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# ONLY NEEDED FOR DOWNLOAD
+# DOWNLOAD A PRODUCT
 
-# get username and password
-CDSE_user = "johannes.p.lohse@uit.no"
-CDSE_passwd = "Dummy_Password123"
+product = response_dict['value'][3]
+logger.info(f"Preparing to download product: {product['Name']}")
 
-# generate access token (for download)
+# build download url for current product
+url = f"https://zipper.dataspace.copernicus.eu/odata/v1/Products({product['Id']})/$value"
+
+# generate access token
 access_token = CDSE_atc.get_access_token(CDSE_user, CDSE_passwd)
 
-# -------------------------------------------------------------------------- #
-# -------------------------------------------------------------------------- #
+headers = {"Authorization": f"Bearer {access_token}"}
 
+session = requests.Session()
+session.headers.update(headers)
+response = session.get(url, headers=headers, stream=True)
 
+with open(f"{product['Name'].split('.SAFE')[0]}.zip", "wb") as file:
+    for chunk in response.iter_content(chunk_size=8192):
+        if chunk:
+            file.write(chunk)
+
+session.close()
+response.close()
 
 
 
@@ -207,18 +244,6 @@ pd.DataFrame.from_dict(json['value']).head(5)
 
 
 
-url = f"https://zipper.dataspace.copernicus.eu/odata/v1/Products({result['Id']})/$value"
-
-headers = {"Authorization": f"Bearer {access_token}"}
-
-session = requests.Session()
-session.headers.update(headers)
-response = session.get(url, headers=headers, stream=True)
-
-with open(f"{result['Name'].split('.SAFE')[0]}.zip", "wb") as file:
-    for chunk in response.iter_content(chunk_size=8192):
-        if chunk:
-            file.write(chunk)
 
 
 
