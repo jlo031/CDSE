@@ -1,4 +1,4 @@
-# ---- This is <geojson_utils.py> ----
+# ---- This is <json_utils.py> ----
 
 """
 Utils for search and download from CDSE.
@@ -17,7 +17,7 @@ from loguru import logger
 
 def read_geojson(geojson_path):
     """
-    Read a GeoJSON file into feature collection
+    Read a GeoJSON file into geojson object
 
     Parameters
     ----------
@@ -25,42 +25,38 @@ def read_geojson(geojson_path):
 
     Returns
     -------
-    D : Dictionary with geojson data
+    geojson_obj : dictionary with geojson data
     """
 
     geojson_path  = pathlib.Path(geojson_path).resolve()
 
     if not geojson_path.exists():
         logger.error(f'Cannot find geojson_path: {geojson_path}')
-        D = []
-        return D
+        geojson_obj = []
+        return geojson_obj
 
     with open(geojson_path) as f:
-        D = geojson.load(f) 
+        geojson_obj = geojson.load(f) 
 
-    if not 'features' in D.keys():
-        logger.error(f'Geojson file does not contain features')
-        return D
-
-    return D
+    return geojson_obj
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def geojson_to_wkt(geojson_obj, decimals=4):
+def convert_geojson_obj_2_wkt(geojson_obj, decimals=4):
     """
-    Convert a GeoJSON object to Well-Known Text.
+    Convert a GeoJSON object to well-known text.
     Intended for use with OpenSearch queries.
     3D points are converted to 2D.
 
     Parameters
     ----------
-    geojson_dict : geojson data dictionary
+    geojson_obj : dictionary with geojson data
     decimals : number of decimal to round coordinate to (default=4)
 
     Returns
     -------
-    aoi_string : Well-Known Text string representation of the geometry
+    aoi_string : well-known text string representation of the geometry
     """
 
 
@@ -110,24 +106,29 @@ def geojson_to_wkt(geojson_obj, decimals=4):
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+def get_aoi_string_from_geojson(geojson_path, decimals=4):
+    """
+    Convert content of a GeoJSON fileo to well-known text.
+    Intended for use with OpenSearch queries.
+    3D points are converted to 2D.
 
+    Parameters
+    ----------
+    geojson_path : path to geojson file
+    decimals : number of decimal to round coordinate to (default=4)
 
+    Returns
+    -------
+    aoi_string : Well-Known Text string representation of the geometry
+    """
 
+    geojson_obj = read_geojson(geojson_path)
 
+    aoi_string = convert_geojson_obj_2_wkt(geojson_obj, decimals=decimals)
 
-
-
-
-
-
-
-
-
-
-
-
+    return aoi_string
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# ---- End of <geojson_utils.py> ----
+# ---- End of <json_utils.py> ----

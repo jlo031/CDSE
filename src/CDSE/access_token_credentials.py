@@ -41,8 +41,6 @@ def get_access_token(username: str, password: str) -> str:
 
     return r.json()["access_token"]
 
-##access_token = get_access_token("johannes.p.lohse@uit.no","Dummy_Password123")
-
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
