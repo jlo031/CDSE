@@ -4,6 +4,7 @@
 Utils for search and download from CDSE.
 """
 
+import sys
 import pathlib
 import json
 import geojson
@@ -20,18 +21,175 @@ from loguru import logger
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+def check_CDSE_request_parameters(
+    sensor,
+    area,
+    start_date,
+    end_date,
+    start_time = "00:00:00",
+    end_time = "00:00:00",
+    max_results = 1000,
+    max_cloud_cover = 100,
+    sensor_mode = None,
+    processing_level = None,
+    expand_attributes = True,
+    loglevel = 'INFO'
+):
+    """
+    Ensure correct formatting of input parameters for CDSE catalogue request.
+
+    Parameters
+    ----------
+    sensor : sensor collection to search (SENTINEL-1, SENTINEL-2)
+    area : geojson file with search area
+    start_date : start date, format YYYY-MM-DD
+    end_date : end date, format YYYY-MM-DD
+    start_time : start time, format hh:mm:ss (default="00:00:00")
+    end_time : end time, format hh:mm:ss (default="00:00:00")
+    max_results : maximum number of items returned from a query
+    max_cloud_cover : maximum cloud cover (default=100)
+    sensor_mode : sensor mode (default=None)
+    processing_level : data processing level (default=None)
+    expand_attributes : see the full metadata of each returned result (default=True)
+    loglevel : loglevel setting (default='INFO')
+
+    Returns
+    -------
+    valid_parameters : True/False
+    """
+
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
+
+    # define valid parameter choices
+    valid_sensors = ['SENTINEL-1', 'Sentinel-1', 'SENTINEL-2', 'Sentinel-2']
+    valid_modes = ['EW', 'IW']
+    datestring_length = 10
+    datesplit_length = 3
+    timetring_length = 8
+    timesplit_length = 3
+    valid_processing_levels = [0,1,'0','1']
+
+    ## valid_S1_levels = [0,1,'0','1']
+    ## valid_S2_levels = ['S2MSI1C', 'S2MSI2A']
+ 
+    # initialize return Boolean
+    valid_parameters = False
+
+    # ------------------------ #
+
+    logger.info("Checking CDSE request parameters")
+
+    # sensor
+    logger.debug(f"Checking input 'sensor': {sensor}")
+    if sensor not in valid_sensors:
+        logger.info(f"Implemented sensors are: {valid_sensors}")
+        logger.error(f"Sensor '{sensor}' is not a valid sensor")
+        return valid_parameters
+
+    # area
+    logger.debug(f"Checking input 'area': {area}")
+    geojson_path  = pathlib.Path(area).resolve()
+    if not geojson_path.exists():
+        logger.error(f"Cannot find search area file: '{geojson_path}'")
+        return valid_parameters
+    if not geojson_path.suffix.endswith('json'):
+        logger.error(f"Input 'area' must be a json file, but file ending is '{geojson_path.suffix}'")
+        return valid_parameters
+
+    # start_date and end_date
+    for test_date in [start_date, end_date]:
+        logger.debug(f"Checking input 'date': {test_date}")
+        if len(test_date) is not datestring_length or len(test_date.split('-')) is not datesplit_length:
+            logger.info("Date format must be: 'YYYY-MM-DD'")
+            logger.error(f"Input date '{test_date}' is not a correct date format")
+            return valid_parameters
+
+    # start_time and end_time
+    for test_time in [start_time, end_time]:
+        logger.debug(f"Checking input 'time': {test_time}")
+        if len(test_time) is not timetring_length or len(test_time.split(':')) is not timesplit_length:
+            logger.info("Time format must be: 'hh:mm:ss'")
+            logger.error(f"Input time '{test_time}' is not a correct test_time format")
+            return valid_parameters
+
+    # max_results
+    logger.debug(f"Checking input 'max_results': {max_results}")
+    if type(max_results) is not int:
+        logger.error(f"'max_results' must be an integer number")
+        return valid_parameters
+    if max_results<1 or max_results>1000:
+        logger.error(f"max_results: '{max_results}' is outside valid range [1,1000]")
+        return valid_parameters
+
+    # max_cloud_cover
+    logger.debug(f"Checking input 'max_cloud_cover': {max_cloud_cover}")
+    if type(max_cloud_cover) is not int:
+        logger.error(f"'max_cloud_cover' must be an integer number")
+        return valid_parameters
+    if max_cloud_cover<0 or max_cloud_cover>100:
+        logger.error(f"max_cloud_cover: '{max_cloud_cover}' is outside valid range [0,100]")
+        return valid_parameters
+
+    # sensor_mode
+    if sensor_mode is not None:
+        logger.debug(f"Checking input 'sensor_mode': {sensor_mode}")
+        if sensor_mode not in valid_modes:
+            logger.info(f"Implemented sensor modes are: {valid_modes}")
+            logger.error(f"'{sensor_mode}' is not a valid sensor mode")
+            return valid_parameters
+
+    # processing_level
+    if processing_level is not None:
+        logger.debug(f"Checking input 'processing_level': {processing_level}")
+        if processing_level not in valid_processing_levels:
+            logger.info(f"Implemented processing levels are: {valid_processing_levels}")
+            logger.error(f"'{processing_level}' is not a valid processing level")
+            return valid_parameters
+
+    ## # processing_level
+    ## if processing_level is not None:
+    ##     logger.debug(f"Checking input 'processing_level': {processing_level}")
+    ##     if sensor.upper()=='SENTINEL-1' and processing_level not in valid_S1_levels:
+    ##         logger.info(f"Implemented processing levels are: {valid_S1_levels}")
+    ##         logger.error(f"'{processing_level}' is not a valid processing level for S1")
+    ##         return valid_parameters
+    ##     elif sensor.upper()=='SENTINEL-2' and processing_level not in valid_S2_levels:
+    ##         logger.info(f"Implemented processing levels are: {valid_S2_levels}")
+    ##         logger.error(f"'{processing_level}' is not a valid processing level for S2")
+    ##         return valid_parameters
+
+    # expand_attributes
+    logger.debug(f"Checking input 'expand_attributes': {expand_attributes}")
+    if type(expand_attributes) is not bool:
+        logger.info(f"'expand_attributes' must be boolean expression")
+        logger.error(f"'{expand_attributes}' is not a valid expand_attributes")
+        return valid_parameters
+
+    # ------------------------ #
+
+    logger.info(f"Checked all input parameters")
+    valid_parameters = True
+
+    return valid_parameters
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
 def search_CDSE_catalogue(
     sensor,
     area,
     start_date,
     end_date,
-    start_time = None,
-    end_time = None,
-    max_results = 100,
-    max_cloud_cover = None,
+    start_time = "00:00:00",
+    end_time = "00:00:00",
+    max_results = 1000,
+    max_cloud_cover = 100,
     sensor_mode = None,
     processing_level = None,
-    expand_attributes = True
+    expand_attributes = True,
+    loglevel = 'INFO'
 ):
     """
     Search the CDSE data catalogue for satelite products.
@@ -42,169 +200,161 @@ def search_CDSE_catalogue(
     area : geojson file with search area
     start_date : start date, format YYYY-MM-DD
     end_date : end date, format YYYY-MM-DD
-    start_time : start time, format hh:mm:ss (default=00:00:00)
-    end_time : end time, format hh:mm:ss (default=00:00:00)
+    start_time : start time, format hh:mm:ss (default="00:00:00")
+    end_time : end time, format hh:mm:ss (default="00:00:00")
     max_results : maximum number of items returned from a query
-    max_cloud_cover : maximum cloud cover (default=None)
+    max_cloud_cover : maximum cloud cover (default=100)
     sensor_mode : sensor mode (default=None)
     processing_level : data processing level (default=None)
-   expand_Attributes : see the full metadata of each returned result (default=True)
+    expand_attributes : see the full metadata of each returned result (default=True)
+    loglevel : loglevel setting (default='INFO')
 
     Returns
     -------
     response_json : CDSE response in json format (dict)
     """
 
-    # ------------------------ #
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
 
-    # define valid parameter choices
-    valid_sensors = ['SENTINEL-1', 'Sentinel-1', 'SENTINEL-2', 'Sentinel-2']
-    valid_modes = ['EW', 'IW']
-    datestring_length = 10
-    datesplit_length = 3
-    timetring_length = 8
-    timesplit_length = 3
-    valid_levels = [0,1]
-
-    # initialize empty response
-    response_json = None
+    # initialize empty response_json
+    response_json = []
 
     # ------------------------ #
 
-    # check user inputs
+    # check input parameters
+    valid_input = check_CDSE_request_parameters(
+        sensor = sensor,
+        area = area,
+        start_date = start_date,
+        end_date = end_date,
+        start_time = start_time,
+        end_time = end_time,
+        max_results = max_results,
+        max_cloud_cover = max_cloud_cover,
+        sensor_mode = sensor_mode,
+        processing_level = processing_level,
+        expand_attributes = expand_attributes,
+        loglevel = loglevel
+    )
 
-    # sensor
-    if sensor not in valid_sensors:
-        logger.info(f"Implemented sensors are: {valid_sensors}")
-        logger.error(f"Sensor '{sensor}' is not a valid sensor")
-        return
+    if not valid_input:
+        logger.error(f"Invalid search parameters")
+        return response_json
 
-    # area
-    geojson_path  = pathlib.Path(area).resolve()
-    if not geojson_path.exists():
-        logger.error(f"Cannot find search area file: '{geojson_path}'")
-        return
-
-    # start_date and end_date
-    for test_date in [start_date, end_date]:
-        logger.debug(f"Checking date input: '{test_date}'")
-        if len(test_date) is not datestring_length or len(test_date.split('-')) is not datesplit_length:
-            logger.info("Date format must be: 'YYYY-MM-DD'")
-            logger.error(f"Input date '{test_date}' is not a correct date format")
-            return
-
-    # start_time and end_time
-    for test_time in [start_time, end_time]:
-        if test_time is not None:
-            logger.debug(f"Checking date input: '{test_time}'")
-            if len(test_time) is not timetring_length or len(test_time.split(':')) is not timesplit_length:
-                logger.info("Time format must be: 'hh:mm:ss'")
-                logger.error(f"Input time '{test_time}' is not a correct test_time format")
-                return
-
-    # max_results
-    if max_results<1 or max_results>1000:
-        logger.error(f"max_results: '{max_results}' is outside valid range [1,1000]")
-        return
-
-    # max_cloud_cover
-    if max_cloud_cover is not None:
-        logger.debug("Checking 'max_cloud_cover' input")
-        if max_cloud_cover<0 or max_cloud_cover>100:
-            logger.error(f"max_cloud_cover: '{max_cloud_cover}' is outside valid range [0,100]")
-            return
-
-    # sensor_mode
-    if sensor_mode is not None:
-        logger.debug("Checking 'sensor_mode' input")
-        if sensor_mode not in valid_modes:
-            logger.info(f"Implemented sensor modes are: {valid_modes}")
-            logger.error(f"'{sensor_mode}' is not a valid sensor mode")
-            return
-
-    # processing_level
-    if processing_level is not None:
-        logger.debug("Checking 'processing_level' input")
-        if processing_level not in valid_levels:
-            logger.info(f"Implemented processing levels are: {valid_levels}")
-            logger.error(f"'{processing_level}' is not a valid processing level")
-            return
-
-    # ------------------------ #
+# -------------------------------------------------------------------------- #
 
     # read aoi string
-    aoi = CDSE_json.get_aoi_string_from_geojson(geojson_path, decimals=3)
+    aoi = CDSE_json.get_aoi_string_from_geojson(area, decimals=4)
 
-    # ------------------------ #
+# -------------------------------------------------------------------------- #
 
     # build the query url
 
-    # build query string: sensor
+    # general query parameters
+
+    # sensor
     querySTR_sensor = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name eq '{sensor}'"
     logger.debug(f"querySTR_sensor: {querySTR_sensor}")
 
-    # build query string: area
+    # area
     querySTR_area =  " and " + f"OData.CSC.Intersects(area=geography'SRID=4326;{aoi}')"
     logger.debug(f"querySTR_area: {querySTR_area}")
 
-    # build query string: time
-    if start_time == None and end_time == None:
-        querySTR_time = " and " + f"ContentDate/Start gt {start_date}T00:00:00.000Z and ContentDate/Start lt {end_date}T00:00:00.000Z"
-    else:
-        querySTR_time = " and " + f"ContentDate/Start gt {start_date}T{start_time}.000Z and ContentDate/Start lt {end_date}T{end_time}.000Z"
+    # date and time
+    querySTR_time = " and " + f"ContentDate/Start gt {start_date}T{start_time}.000Z and ContentDate/Start lt {end_date}T{end_time}.000Z"
     logger.debug(f"querySTR_time: {querySTR_time}")
 
-    # build query string: max cloud cover
-    if sensor == 'SENTINEL-2' and max_cloud_cover is not None:
+    # ------------------------ #
+
+    # processing level
+    if processing_level is not None:
+
+        if sensor == 'SENTINEL-1':
+            querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'LEVEL{processing_level}')"
+
+        elif sensor == 'SENTINEL-2':
+            if processing_level in [1,'1']:
+                querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{processing_level}C')"
+            elif processing_level in [2,'2']:
+                querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{processing_level}A')"
+            else:
+                logger.error("Invalid processing level for S2, should have been caught by parameter check")
+
+    else:
+        querySTR_level = ""
+
+    logger.debug(f"querySTR_level: {querySTR_level}")
+
+    # ------------------------ #
+
+    # Sentinel-1 parameters
+
+    if sensor == 'SENTINEL-1':
+
+        # mode
+        if sensor_mode is not None:
+            querySTR_mode = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensor_mode}')"
+    else:
+        querySTR_mode = ""
+
+    logger.debug(f"querySTR_mode: {querySTR_mode}")
+
+    # ------------------------ #
+
+    # Sentinel-2 parameters
+
+    if sensor == 'SENTINEL-2':
+
+        # cloud cover
         querySTR_max_cloud = " and " + f"Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {max_cloud_cover})"
     else:
         querySTR_max_cloud = ""
+
+
     logger.debug(f"querySTR_max_cloud: {querySTR_max_cloud}")
 
-    # build query string: mode
-    if sensor == 'SENTINEL-1' and sensor_mode is not None:
-        querySTR_mode = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensor_mode}')"
-    else:
-        querySTR_mode = ""
-    logger.debug(f"querySTR_mode: {querySTR_mode}")
+    # ------------------------ #
 
-    # build query string: level
-    if sensor == 'SENTINEL-1' and processing_level is not None:
-        querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'LEVEL{processing_level}')"
-    else:
-        querySTR_level = ""
-    logger.debug(f"querySTR_level: {querySTR_level}")
+    # additional search parameters
 
     if expand_attributes:
         querySTR_expand_attributes = "&$expand=Attributes"
     else:
         querySTR_expand_attributes = ""
+    logger.debug(f"querySTR_expand_attributes: {querySTR_expand_attributes}")
 
 
-    # build query string: max_results
-    #querySTR_max_results = f"&$top={max_results}"
-    #logger.debug(f"querySTR_time: {querySTR_time}")
+    # max results
+    querySTR_max_results = f"&$top={max_results}"
+    logger.debug(f"querySTR_max_results: {querySTR_max_results}")
 
     # ------------------------ #
 
     # build full query string
-    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_max_cloud}{querySTR_mode}{querySTR_level}{querySTR_time}{querySTR_expand_attributes}"
+    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_max_cloud}{querySTR_mode}{querySTR_level}{querySTR_time}{querySTR_expand_attributes}{querySTR_max_results}"
 
-    logger.info(f"Full query string: {querySTR}")
+    logger.info(f"Full query url: {querySTR}")
 
-    # ------------------------ #
+# -------------------------------------------------------------------------- #
 
     # search the data collection
     response_json = requests.get(querySTR).json()
-    #product_list = response_json['value']
 
+    # extract list of products 
+    product_list = response_json['value']
+
+    logger.info(f"Query found {len(product_list)} products")
+
+    if max_results<=len(product_list):
+        logger.info(f"Number of products exceeds maximum number")
+        logger.info(f"Access next query url at 'response_json['@odata.nextLink']")
 
     return response_json
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
-
-#product = response_dict['value'][3]
 
 def download_product_from_cdse(product, download_dir, username, password, overwrite=False, chunk_size=8192):
     """

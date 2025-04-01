@@ -11,6 +11,8 @@ https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/N
 https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Collection/Name eq 'SENTINEL-1' and Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'EW_GRDM_1S') and ContentDate/Start gt 2022-05-03T00:00:00.000Z and ContentDate/Start lt 2022-05-03T12:00:00.000Z&$top=100
 """
 
+
+import sys
 import pathlib
 from loguru import logger
 
@@ -20,20 +22,20 @@ import CDSE.CDSE_search_and_download as CDSE_sd
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# Define input parameters for search
+# DEFINE INPUT PARAMETERS
 
 # area
 geojson_path = 'roi_svalbard.geojson'
 
 # date and time
 start_date = "2022-06-01"
-end_date = "2022-06-03"
+end_date = "2022-06-02"
 start_time = "02:00:00"
-end_time = "14:00:00"
+end_time = "15:00:00"
 
 # sensor
 data_collection = "SENTINEL-1"
-#data_collection = "SENTINEL-2"
+data_collection = "SENTINEL-2"
 
 # mode
 sensor_mode = 'IW'
@@ -42,29 +44,67 @@ sensor_mode = 'IW'
 processing_level = 1
 
 # maximum cloud cover
-max_cloud = 55
+max_cloud = 100
 
 # maximum  items per query
-max_results = 40
+max_results = 1000
+
+expand_attributes = True
+
+loglevel = 'DEBUG'
 
 # get username and password
 CDSE_user = "johannes.p.lohse@uit.no"
 CDSE_passwd = "Dummy_Password123"
 
 # download dir
-download_dir = '/home/johannes/temporary_downloads'
+download_dir = "/home/jo/temporary_downloads"
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
-
-# test json_utils
-aoi = CDSE_json.get_aoi_string_from_geojson(geojson_path, decimals=3)
-
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# test search_and_download
-response_json = CDSE_sd.search_CDSE_catalogue(
+# ------------------------------------------- #
+# ---- TEST READING AOI WKT FROM GEOJSON ---- #
+# ------------------------------------------- #
+
+geojson_file_list = [
+    'roi_hinlopen.geojson',
+    'roi_multiple.geojson',
+    'roi_svalbard.geojson',
+]
+
+for geojson_file in geojson_file_list:
+
+    logger.info(f"Testing AOI extraction from: {geojson_file}")
+
+    aoi = CDSE_json.get_aoi_string_from_geojson(geojson_file, decimals=3)
+
+    print(f"{aoi}\n")
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# ------------------------------ #
+# ---- TEST PARAMETER CHECK ---- #
+# ------------------------------ #
+
+# adjsut individual parameters to check that errors are caught
+# for example
+status = CDSE_sd.check_CDSE_request_parameters(
+    sensor = data_collection,
+    area = geojson_path,
+    start_date = 'false_input',
+    end_date = end_date,
+)
+logger.info(f"Parameter check status is '{status}'\n")
+
+
+# check the parameters defined above
+status = CDSE_sd.check_CDSE_request_parameters(
     sensor = data_collection,
     area = geojson_path,
     start_date = start_date,
@@ -74,14 +114,109 @@ response_json = CDSE_sd.search_CDSE_catalogue(
     max_results = max_results,
     max_cloud_cover = max_cloud,
     sensor_mode = sensor_mode,
-    processing_level = processing_level
+    processing_level = processing_level,
+    expand_attributes = expand_attributes,
+    loglevel = loglevel
+)
+logger.info(f"Parameter check status is '{status}'\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# check the parameters defined above
+status = CDSE_sd.check_CDSE_request_parameters(
+    sensor = 'Sentinel-1',
+    area = geojson_path,
+    start_date = start_date,
+    end_date = end_date,
+    start_time = start_time,
+    end_time = end_time,
+    max_results = max_results,
+    max_cloud_cover = max_cloud,
+    sensor_mode = sensor_mode,
+    processing_level = 1,
+    expand_attributes = expand_attributes,
+    loglevel = loglevel
+)
+logger.info(f"Parameter check status is '{status}'\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# -------------------------- #
+# ---- TEST CDSE SEARCH ---- #
+# -------------------------- #
+
+logger.info("Testing CDSE catalogue query")
+
+response_json = CDSE_sd.search_CDSE_catalogue(
+    sensor = data_collection,
+    area = geojson_path,
+    start_date = start_date,
+    end_date = end_date,
+    start_time = start_time,
+    end_time = end_time,
+    max_results = 200,
+    max_cloud_cover = max_cloud,
+    sensor_mode = sensor_mode,
+    processing_level = 2,
+    expand_attributes = expand_attributes,
+    loglevel = loglevel
 )
 
+logger.info(f"'response_json' has keys: {response_json.keys()}")
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+sys.exit()
+
+# ---------------------------- #
+# ---- TEST CDSE DOWNLOAD ---- #
+# ---------------------------- #
+
+logger.info("Testing CDSE catalogue download")
+
+# get product_list from response_json
 product_list = response_json['value']
-download_dir = pathlib.Path(download_dir)
+
+# make sure download_dir exists
+download_dir = pathlib.Path(download_dir).resolve()
 download_dir.mkdir(mode=511, parents=False, exist_ok=True)
 
-"""
 CDSE_sd.download_product_list_from_cdse(
     product_list,
     download_dir,
@@ -90,10 +225,14 @@ CDSE_sd.download_product_list_from_cdse(
     overwrite=False,
     chunk_size=8192,
 )
-"""
+
+sys.exit()
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
 
 # Check found products
 
@@ -109,41 +248,41 @@ EW_SLC_product_list  = []
 MISC_product_list    = []
 
 for i, result in enumerate(product_list):
-    logger.debug(f"Checking product {i+1} of {len(product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
+    ##logger.debug(f"Checking product {i+1} of {len(product_list)}")
+    ##logger.debug(f"Name: {result['Name']}")
+    ##logger.debug(f"Id:   {result['Id']}")
 
     if 'IW_GRD' in result['Name']:
-        logger.debug('Adding current product to IW_GRD list')
+        ##logger.debug('Adding current product to IW_GRD list')
         IW_GRD_product_list.append(result)
 
     elif 'EW_GRD' in result['Name']:
-        logger.debug('Adding current product to EW_GRD list')
+        ##logger.debug('Adding current product to EW_GRD list')
         EW_GRD_product_list.append(result)
 
 
     elif 'IW_RAW' in result['Name']:
-        logger.debug('Adding current product to IW_RAW list')
+        ##logger.debug('Adding current product to IW_RAW list')
         IW_RAW_product_list.append(result)
 
     elif 'IW_SLC' in result['Name']:
-        logger.debug('Adding current product to IW_RAW list')
+        ##logger.debug('Adding current product to IW_RAW list')
         IW_SLC_product_list.append(result)
 
 
     elif 'EW_RAW' in result['Name']:
-        logger.debug('Adding current product to EW_RAW list')
+        ##logger.debug('Adding current product to EW_RAW list')
         EW_RAW_product_list.append(result)
 
     elif 'EW_SLC' in result['Name']:
-        logger.debug('Adding current product to EW_RAW list')
+        ##logger.debug('Adding current product to EW_RAW list')
         EW_SLC_product_list.append(result)
 
     else:
-        logger.debug('Adding current product to misc product list')
+        ##logger.debug('Adding current product to misc product list')
         MISC_product_list.append(result)
 
-    print('')
+    ##print('')
 
 logger.info(f"IW GRD products: {len(IW_GRD_product_list)}")
 logger.info(f"EW GRD products: {len(EW_GRD_product_list)}")
@@ -152,6 +291,10 @@ logger.info(f"IW SLC products: {len(IW_SLC_product_list)}")
 logger.info(f"EW RAW products: {len(EW_RAW_product_list)}")
 logger.info(f"EW SLC products: {len(EW_SLC_product_list)}")
 logger.info(f"MISC products:   {len(MISC_product_list)}")
+
+
+sys.exit()
+
 
 for i, result in enumerate(IW_GRD_product_list):
     logger.debug(f"Checking product {i+1} of {len(IW_GRD_product_list)}")
