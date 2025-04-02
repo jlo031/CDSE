@@ -17,12 +17,24 @@ import pathlib
 from loguru import logger
 
 import CDSE.json_utils as CDSE_json
-import CDSE.CDSE_search_and_download as CDSE_sd
+import CDSE.utils as CDSE_utils
+import CDSE.search_and_download as CDSE_sd
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
 # DEFINE INPUT PARAMETERS
+
+
+
+
+
+S1A_EW_GRDM_1SDH_20220602T073727_20220602T073831_043481_05310C_53F3.SAFE
+
+
+
+
+
 
 # area
 geojson_path = 'roi_svalbard.geojson'
@@ -35,13 +47,18 @@ end_time = "15:00:00"
 
 # sensor
 data_collection = "SENTINEL-1"
-data_collection = "SENTINEL-2"
+#data_collection = "SENTINEL-2"
 
 # mode
-sensor_mode = 'IW'
+sensor_mode = 'EW'
 
 # processing_level
 processing_level = 1
+##processing_level = '1C'
+
+# product_type
+product_type = 'GRD'
+
 
 # maximum cloud cover
 max_cloud = 100
@@ -55,7 +72,9 @@ loglevel = 'DEBUG'
 
 # get username and password
 CDSE_user = "johannes.p.lohse@uit.no"
-CDSE_passwd = "Dummy_Password123"
+CDSE_passwd = "
+
+"
 
 # download dir
 download_dir = "/home/jo/temporary_downloads"
@@ -120,55 +139,6 @@ status = CDSE_sd.check_CDSE_request_parameters(
 )
 logger.info(f"Parameter check status is '{status}'\n")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# check the parameters defined above
-status = CDSE_sd.check_CDSE_request_parameters(
-    sensor = 'Sentinel-1',
-    area = geojson_path,
-    start_date = start_date,
-    end_date = end_date,
-    start_time = start_time,
-    end_time = end_time,
-    max_results = max_results,
-    max_cloud_cover = max_cloud,
-    sensor_mode = sensor_mode,
-    processing_level = 1,
-    expand_attributes = expand_attributes,
-    loglevel = loglevel
-)
-logger.info(f"Parameter check status is '{status}'\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
@@ -187,10 +157,11 @@ response_json = CDSE_sd.search_CDSE_catalogue(
     end_date = end_date,
     start_time = start_time,
     end_time = end_time,
-    max_results = 200,
+    max_results = max_results,
     max_cloud_cover = max_cloud,
     sensor_mode = sensor_mode,
-    processing_level = 2,
+    product_type = product_type,
+    processing_level = processing_level,
     expand_attributes = expand_attributes,
     loglevel = loglevel
 )
@@ -234,109 +205,19 @@ sys.exit()
 # -------------------------------------------------------------------------- #
 
 
-# Check found products
-
-logger.info(f"Found {len(product_list)} data products")
-
-# initiate individual product lists
-IW_GRD_product_list = []
-EW_GRD_product_list = []
-IW_RAW_product_list  = []
-IW_SLC_product_list  = []
-EW_RAW_product_list  = []
-EW_SLC_product_list  = []
-MISC_product_list    = []
-
-for i, result in enumerate(product_list):
-    ##logger.debug(f"Checking product {i+1} of {len(product_list)}")
-    ##logger.debug(f"Name: {result['Name']}")
-    ##logger.debug(f"Id:   {result['Id']}")
-
-    if 'IW_GRD' in result['Name']:
-        ##logger.debug('Adding current product to IW_GRD list')
-        IW_GRD_product_list.append(result)
-
-    elif 'EW_GRD' in result['Name']:
-        ##logger.debug('Adding current product to EW_GRD list')
-        EW_GRD_product_list.append(result)
 
 
-    elif 'IW_RAW' in result['Name']:
-        ##logger.debug('Adding current product to IW_RAW list')
-        IW_RAW_product_list.append(result)
-
-    elif 'IW_SLC' in result['Name']:
-        ##logger.debug('Adding current product to IW_RAW list')
-        IW_SLC_product_list.append(result)
 
 
-    elif 'EW_RAW' in result['Name']:
-        ##logger.debug('Adding current product to EW_RAW list')
-        EW_RAW_product_list.append(result)
 
-    elif 'EW_SLC' in result['Name']:
-        ##logger.debug('Adding current product to EW_RAW list')
-        EW_SLC_product_list.append(result)
-
-    else:
-        ##logger.debug('Adding current product to misc product list')
-        MISC_product_list.append(result)
-
-    ##print('')
-
-logger.info(f"IW GRD products: {len(IW_GRD_product_list)}")
-logger.info(f"EW GRD products: {len(EW_GRD_product_list)}")
-logger.info(f"IW RAW products: {len(IW_RAW_product_list)}")
-logger.info(f"IW SLC products: {len(IW_SLC_product_list)}")
-logger.info(f"EW RAW products: {len(EW_RAW_product_list)}")
-logger.info(f"EW SLC products: {len(EW_SLC_product_list)}")
-logger.info(f"MISC products:   {len(MISC_product_list)}")
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 
 
-sys.exit()
 
 
-for i, result in enumerate(IW_GRD_product_list):
-    logger.debug(f"Checking product {i+1} of {len(IW_GRD_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(EW_GRD_product_list):
-    logger.debug(f"Checking product {i+1} of {len(EW_GRD_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(IW_SLC_product_list):
-    logger.debug(f"Checking product {i+1} of {len(IW_SLC_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(IW_RAW_product_list):
-    logger.debug(f"Checking product {i+1} of {len(IW_RAW_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(EW_SLC_product_list):
-    logger.debug(f"Checking product {i+1} of {len(EW_SLC_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(EW_RAW_product_list):
-    logger.debug(f"Checking product {i+1} of {len(EW_RAW_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
-
-for i, result in enumerate(MISC_product_list):
-    logger.debug(f"Checking product {i+1} of {len(MISC_product_list)}")
-    logger.debug(f"Name: {result['Name']}")
-    logger.debug(f"Id:   {result['Id']}")
-    print('')
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #

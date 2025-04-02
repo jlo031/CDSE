@@ -1,32 +1,103 @@
 # ---- This is <json_utils.py> ----
 
 """
-Utils for search and download from CDSE.
+json and geojson utils for search and download from CDSE.
 """
 
+import sys
 import pathlib
+
+from loguru import logger
+
 import json
 import geojson
 import geomet.wkt
 import re
 
-from loguru import logger
-
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def read_geojson(geojson_path):
+def write_response_dict_2_json(response_dict, output_file, loglevel = 'INFO'):
     """
-    Read a GeoJSON file into geojson object
+    Write dictionary to json file
+
+    Parameters
+    ----------
+    response_dict : dictionary with CDSE response
+    output_file : output json json file
+    loglevel : loglevel setting (default='INFO')
+    """    
+
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
+
+    if type(response_dict) is not dict:
+        logger.error(f"Expected input type 'dict' but received {type(response_dict)}")
+        return
+
+    if not output_file.endswith('json'):
+        logger.error("Output should be a json (or geojson) file")
+        return
+
+    with open(output_file, 'w') as fout:
+        json.dump(response_dict , fout)
+
+    return
+
+
+
+
+def read_response_dict_from_json(json_path, loglevel = 'INFO'):
+    """
+    Load a json file into a dictionary
+
+    Parameters
+    ----------
+    json_path : path to json file
+    loglevel : loglevel setting (default='INFO')
+
+    Returns
+    -------
+    json_obj : dictionary with json data
+    """
+
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
+
+    json_path  = pathlib.Path(json_path).resolve()
+
+    if not json_path.exists():
+        logger.error(f'Cannot find json_path: {json_path}')
+        json_obj = []
+        return json_obj
+
+    with open(json_path) as f:
+        json_obj = json.load(f) 
+
+    return json_obj
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+def read_geojson(geojson_path, loglevel = 'INFO'):
+    """
+    Load a GeoJSON file into geojson object
 
     Parameters
     ----------
     geojson_path : path to geojson file
+    loglevel : loglevel setting (default='INFO')
 
     Returns
     -------
     geojson_obj : dictionary with geojson data
     """
+
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
 
     geojson_path  = pathlib.Path(geojson_path).resolve()
 
