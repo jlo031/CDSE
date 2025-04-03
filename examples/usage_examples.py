@@ -29,7 +29,7 @@ import CDSE.search_and_download as CDSE_sd
 
 
 
-S1A_EW_GRDM_1SDH_20220602T073727_20220602T073831_043481_05310C_53F3.SAFE
+example_name = "S1A_EW_GRDM_1SDH_20220602T073727_20220602T073831_043481_05310C_53F3.SAFE"
 
 
 
@@ -41,7 +41,7 @@ geojson_path = 'roi_svalbard.geojson'
 
 # date and time
 start_date = "2022-06-01"
-end_date = "2022-06-02"
+end_date = "2022-06-06"
 start_time = "02:00:00"
 end_time = "15:00:00"
 
@@ -58,6 +58,7 @@ processing_level = 1
 
 # product_type
 product_type = 'GRD'
+#product_type = None
 
 
 # maximum cloud cover
@@ -72,9 +73,7 @@ loglevel = 'DEBUG'
 
 # get username and password
 CDSE_user = "johannes.p.lohse@uit.no"
-CDSE_passwd = "
-
-"
+CDSE_passwd = "DummyPassword123"
 
 # download dir
 download_dir = "/home/jo/temporary_downloads"
@@ -173,8 +172,6 @@ logger.info(f"'response_json' has keys: {response_json.keys()}")
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-sys.exit()
-
 # ---------------------------- #
 # ---- TEST CDSE DOWNLOAD ---- #
 # ---------------------------- #
@@ -183,6 +180,11 @@ logger.info("Testing CDSE catalogue download")
 
 # get product_list from response_json
 product_list = response_json['value']
+p = product_list = response_json['value'][1]
+
+
+sys.exit()
+
 
 # make sure download_dir exists
 download_dir = pathlib.Path(download_dir).resolve()

@@ -17,19 +17,103 @@ import CDSE.access_token_credentials as CDSE_atc
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+# define valid parameter choices for CDSE query
+# as they are expected in the main search function below
+
+# implemented sensors are S1 and S2
+valid_sensors = ['SENTINEL-1', 'Sentinel-1', 'SENTINEL-2', 'Sentinel-2']
+
+# dates must be given as YYYY-MM-SS
+datestring_length = 10
+datesplit_length = 3
+
+# times must be given as hh:mm:ss
+timetring_length = 8
+timesplit_length = 3
+
+# implemented S1 modes are EW and IW
+valid_S1_modes = ['EW', 'IW']
+
+# implemented S1 product types are GRD and SLC
+valid_S1_product_types = ['GRD', 'SLC']
+
+# implemented S1 processing levels
+valid_S1_levels = [0,1,'0','1']
+
+# implemented S2 processing levels are 
+valid_S2_product_types = ['1C','2A']
+
+# implemented S2 processing levels are 
+valid_S2_levels = ['1C','2A']
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+def search_CDSE_catalogue_by_name(product_name, loglevel='INFO'):
+    """
+    Search the CDSE data catalogue for specific data product by its exact name.
+
+    Parameters
+    ----------
+    product_name : exact product name, may or may not include .SAFE ending (e.g. S1_EW_GRDM_....)
+    loglevel : loglevel setting (default='INFO')
+
+    Returns
+    -------
+    response_json : CDSE response in json format (dict)
+    """
+
+    # remove default logger handler and add personal one
+    logger.remove()
+    logger.add(sys.stderr, level=loglevel)
+
+    # initialize empty response_json
+    response_json = []
+
+    # ------------------------ #
+
+    if not product_name.endswith(".SAFE"):
+        logger.debug("Adding '.SAFE to product_name")
+        product_name = f"{product_name}.SAFE"
+
+    logger.debug(f"'product_name': {product_name}")
+
+    # build query string
+    querySTR = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Name eq '{product_name}'"
+    logger.debug(f"querySTR: {querySTR}")
+
+
+    # search the data collection
+    response_json = requests.get(querySTR).json()
+
+    # extract list of products 
+    product_list = response_json['value']
+
+    if len(product_list)==1:
+        logger.info(f"Query found exactly 1 product: {product_list[0]['Name']}")
+    elif len(product_list)==0:
+        logger.error(f"Could not find specified input product")
+    elif len(product_list)>1:
+        logger.warning(f"Found more than 1 product")
+
+    return response_json
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
 def check_CDSE_request_parameters(
     sensor,
     area,
     start_date,
     end_date,
-    start_time = "00:00:00",
-    end_time = "00:00:00",
-    max_results = 1000,
-    max_cloud_cover = 100,
-    sensor_mode = None,
-    product_type = None,
-    processing_level = None,
-    expand_attributes = True,
+    start_time,
+    end_time,
+    sensor_mode,
+    product_type,
+    processing_level,
+    max_cloud_cover,
+    max_results,
+    expand_attributes,
     loglevel = 'INFO'
 ):
     """
@@ -37,47 +121,35 @@ def check_CDSE_request_parameters(
 
     Parameters
     ----------
-    sensor : sensor collection to search (SENTINEL-1, SENTINEL-2)
+    sensor : sensor collection to search
     area : geojson file with search area
     start_date : start date, format YYYY-MM-DD
     end_date : end date, format YYYY-MM-DD
-    start_time : start time, format hh:mm:ss (default="00:00:00")
-    end_time : end time, format hh:mm:ss (default="00:00:00")
+    start_time : start time, format hh:mm:ss
+    end_time : end time, format hh:mm:ss
+    sensor_mode : sensor mode
+    product_type : product type
+    processing_level : data processing level
+    max_cloud_cover : maximum cloud cover
     max_results : maximum number of items returned from a query
-    max_cloud_cover : maximum cloud cover (default=100)
-    sensor_mode : sensor mode (default=None)
-    product_type : product type (default=None)
-    processing_level : data processing level (default=None)
-    expand_attributes : see the full metadata of each returned result (default=True)
-    loglevel : loglevel setting (default='INFO')
+    expand_attributes : see the full metadata of each returned result
+    loglevel : loglevel setting
 
     Returns
     -------
-    valid_parameters : True/False
+    valid_parameters : Boolean (True/False)
     """
 
     # remove default logger handler and add personal one
     logger.remove()
     logger.add(sys.stderr, level=loglevel)
 
-    # define valid parameter choices
-    valid_sensors = ['SENTINEL-1', 'Sentinel-1', 'SENTINEL-2', 'Sentinel-2']
-    datestring_length = 10
-    datesplit_length = 3
-    timetring_length = 8
-    timesplit_length = 3
-    valid_modes = ['EW', 'IW']
-    valid_S1_product_types = ['GRD']
-    valid_S2_product_types = ['1C','2A']
-    valid_S1_levels = [0,1,'0','1']
-    valid_S2_levels = ['1C','2A']
- 
     # initialize return Boolean
     valid_parameters = False
 
-    # ------------------------ #
-
     logger.info("Checking CDSE request parameters")
+
+    # ------------------------ #
 
     # sensor
     logger.debug(f"Checking input 'sensor': {sensor}")
@@ -112,6 +184,77 @@ def check_CDSE_request_parameters(
             logger.error(f"Input time '{test_time}' is not a correct test_time format")
             return valid_parameters
 
+    # ------------------------ #
+
+    if sensor=='SENTINEL-1':
+
+        # sensor_mode
+        if sensor_mode is not None:
+            logger.debug(f"Checking input 'sensor_mode': {sensor_mode}")
+            if sensor_mode not in valid_S1_modes:
+                logger.info(f"Implemented S1 sensor modes are: {valid_S1_modes}")
+                logger.error(f"'{sensor_mode}' is not a valid sensor mode for S1")
+                return valid_parameters
+
+        # product_type
+        if product_type is not None:
+            logger.debug(f"Checking input 'product_type': {product_type}")
+            if product_type not in valid_S1_product_types:
+                logger.info(f"Implemented S1 product types are: {valid_S1_product_types}")
+                logger.error(f"'{product_type}' is not a valid product type for S1")
+                return valid_parameters
+       
+
+        # processing_level
+        if processing_level is not None:
+            logger.debug(f"Checking input 'processing_level': {processing_level}")
+            if processing_level not in valid_S1_levels:
+                logger.info(f"Implemented S1 processing levels are: {valid_S1_levels}")
+                logger.error(f"'{processing_level}' is not a valid processing level for S1")
+                return valid_parameters
+
+        # cloud cover
+        logger.info(f"'max_cloud_cover' set to {max_cloud_cover}, but will not be used for S1 search")
+
+    # ------------------------ #
+
+    if sensor=='SENTINEL-2':
+
+        # sensor_mode
+        logger.info(f"'sensor_mode' set to {sensor_mode}, but will not be used for S2 search")
+
+        # product_type
+        if product_type is not None:
+            logger.debug(f"Checking input 'product_type': {product_type}")
+            if product_type not in valid_S2_product_types:
+                logger.info(f"Implemented S2 product types are: {valid_S2_product_types}")
+                logger.error(f"'{product_type}' is not a valid product type for S2")
+                return valid_parameters
+
+        # processing_level
+        if processing_level is not None:
+            logger.debug(f"Checking input 'processing_level': {processing_level}")
+            if processing_level not in valid_S2_levels:
+                logger.info(f"Implemented S2 processing levels are: {valid_S2_levels}")
+                logger.error(f"'{processing_level}' is not a valid processing level for S2")
+                return valid_parameters
+
+        # max_cloud_cover
+        logger.debug(f"Checking input 'max_cloud_cover': {max_cloud_cover}")
+        if type(max_cloud_cover) is not int:
+            logger.error(f"'max_cloud_cover' must be an integer number")
+            return valid_parameters
+        if max_cloud_cover<0 or max_cloud_cover>100:
+            logger.error(f"max_cloud_cover: '{max_cloud_cover}' is outside valid range [0,100]")
+            return valid_parameters
+
+
+        if processing_level is not None and product_type is not None and processing_level is not product_type:
+            logger.error(f"'processing_level' and 'product_type' are redundant for S2 and must be the same (or one not set)")
+            return valid_parameters
+
+    # ------------------------ #
+
     # max_results
     logger.debug(f"Checking input 'max_results': {max_results}")
     if type(max_results) is not int:
@@ -121,56 +264,11 @@ def check_CDSE_request_parameters(
         logger.error(f"max_results: '{max_results}' is outside valid range [1,1000]")
         return valid_parameters
 
-    # max_cloud_cover
-    logger.debug(f"Checking input 'max_cloud_cover': {max_cloud_cover}")
-    if type(max_cloud_cover) is not int:
-        logger.error(f"'max_cloud_cover' must be an integer number")
-        return valid_parameters
-    if max_cloud_cover<0 or max_cloud_cover>100:
-        logger.error(f"max_cloud_cover: '{max_cloud_cover}' is outside valid range [0,100]")
-        return valid_parameters
-
-    # sensor_mode
-    if sensor_mode is not None:
-        logger.debug(f"Checking input 'sensor_mode': {sensor_mode}")
-        if sensor_mode not in valid_modes:
-            logger.info(f"Implemented sensor modes are: {valid_modes}")
-            logger.error(f"'{sensor_mode}' is not a valid sensor mode")
-            return valid_parameters
-
-    # product_type
-    if product_type is not None:
-        logger.debug(f"Checking input 'product_type': {product_type}")
-        if sensor.upper()=='SENTINEL-1' and product_type not in valid_S1_product_types:
-            logger.info(f"Implemented S1 product types are: {valid_S1_product_types}")
-            logger.error(f"'{product_type}' is not a valid product type for S1")
-            return valid_parameters
-        elif sensor.upper()=='SENTINEL-2' and product_type not in valid_S2_product_types:
-            logger.info(f"Implemented S2 product types are: {valid_S2_product_types}")
-            logger.error(f"'{product_type}' is not a valid product type for S2")
-            return valid_parameters
-
-    # processing_level
-    if processing_level is not None:
-        logger.debug(f"Checking input 'processing_level': {processing_level}")
-        if sensor.upper()=='SENTINEL-1' and processing_level not in valid_S1_levels:
-            logger.info(f"Implemented S1 processing levels are: {valid_S1_levels}")
-            logger.error(f"'{processing_level}' is not a valid processing level for S1")
-            return valid_parameters
-        elif sensor.upper()=='SENTINEL-2' and processing_level not in valid_S2_levels:
-            logger.info(f"Implemented S2 processing levels are: {valid_S2_levels}")
-            logger.error(f"'{processing_level}' is not a valid processing level for S2")
-            return valid_parameters
-
     # expand_attributes
     logger.debug(f"Checking input 'expand_attributes': {expand_attributes}")
     if type(expand_attributes) is not bool:
         logger.info(f"'expand_attributes' must be boolean expression")
         logger.error(f"'{expand_attributes}' is not a valid expand_attributes")
-        return valid_parameters
-
-    if sensor.upper()=='SENTINEL-2' and processing_level is not None and product_type is not None and processing_level is not product_type:
-        logger.error(f"'processing_level' and 'product_type' are redundant for S2 and must be the same (or one not set)")
         return valid_parameters
 
     # ------------------------ #
@@ -183,42 +281,6 @@ def check_CDSE_request_parameters(
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def search_CDSE_catalogue_by_name(product_name, loglevel = 'INFO'):
-    """
-    Search the CDSE data catalogue specific data product by its exact name.
-
-    Parameters
-    ----------
-    product_name : exact product name (e.g. S1_EW_GRDM_....)
-    loglevel : loglevel setting (default='INFO')
-
-    Returns
-    -------
-    response_json : CDSE response in json format (dict)
-    """
-
-    # sensor
-    querySTR = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Name eq 'S1A_IW_GRDH_1SDV_20141031T161924_20141031T161949_003076_003856_634E.SAFE'"
-    logger.debug(f"querySTR: {querySTR}")
-
-
-    # search the data collection
-    response_json = requests.get(querySTR).json()
-
-    # extract list of products 
-    product_list = response_json['value']
-
-    logger.info(f"Query found {len(product_list)} products")
-
-    return response_json
-
-
-
-
-
-
-
-
 def search_CDSE_catalogue(
     sensor,
     area,
@@ -226,11 +288,11 @@ def search_CDSE_catalogue(
     end_date,
     start_time = "00:00:00",
     end_time = "00:00:00",
-    max_results = 1000,
-    max_cloud_cover = 100,
     sensor_mode = None,
     product_type = None,
     processing_level = None,
+    max_cloud_cover = 100,
+    max_results = 1000,
     expand_attributes = True,
     loglevel = 'INFO'
 ):
@@ -245,11 +307,11 @@ def search_CDSE_catalogue(
     end_date : end date, format YYYY-MM-DD
     start_time : start time, format hh:mm:ss (default="00:00:00")
     end_time : end time, format hh:mm:ss (default="00:00:00")
-    max_results : maximum number of items returned from a query
-    max_cloud_cover : maximum cloud cover (default=100)
     sensor_mode : sensor mode (default=None)
     product_type : product type (default=None)
     processing_level : data processing level (default=None)
+    max_cloud_cover : maximum cloud cover (default=100)
+    max_results : maximum number of items returned from a query
     expand_attributes : see the full metadata of each returned result (default=True)
     loglevel : loglevel setting (default='INFO')
 
@@ -265,6 +327,9 @@ def search_CDSE_catalogue(
     # initialize empty response_json
     response_json = []
 
+    # allow for non-capitalized spelling
+    sensor = sensor.upper()
+
     # ------------------------ #
 
     # check input parameters
@@ -275,11 +340,11 @@ def search_CDSE_catalogue(
         end_date = end_date,
         start_time = start_time,
         end_time = end_time,
-        max_results = max_results,
-        max_cloud_cover = max_cloud_cover,
         sensor_mode = sensor_mode,
         product_type = product_type,
         processing_level = processing_level,
+        max_cloud_cover = max_cloud_cover,
+        max_results = max_results,
         expand_attributes = expand_attributes,
         loglevel = loglevel
     )
@@ -313,77 +378,60 @@ def search_CDSE_catalogue(
 
     # ------------------------ #
 
-    # processing level
-    if processing_level is not None:
-
-        if sensor == 'SENTINEL-1' and processing_level in [0,'0',1,'1']:
-            querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'LEVEL{processing_level}')"
-
-        elif sensor == 'SENTINEL-2' and processing_level in ['1C','2A']:
-            querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{processing_level}')"
-
-        else:
-            logger.error(f"Processing level '{processing_level}' not valid for sensor '{sensor}'. Should have been caught by parameter check")
-
-    else:
-        querySTR_level = ""
-
-    logger.debug(f"querySTR_level: {querySTR_level}")
-
-    # ------------------------ #
-
-
-
-
-    # product type
-    if product_type is not None:
-
-        if sensor == 'SENTINEL-1' and product_type in ['GRD']:
-            querySTR_product_type = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '*{product_type}*')"
-
-        elif sensor == 'SENTINEL-2' and product_type in ['1C','2A']:
-            querySTR_product_type = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{product_type}')"
-
-        else:
-            logger.error(f"Product type '{productType}' not valid for sensor '{sensor}'. Should have been caught by parameter check")
-
-    else:
-        querySTR_product_type = ""
-
-    logger.debug(f"querySTR_product_type: {querySTR_product_type}")
-
-
-
-
-
-
-    # ------------------------ #
-
-    # Sentinel-1 parameters
-
     if sensor == 'SENTINEL-1':
 
-        # mode
+        # S1 sensor mode
         if sensor_mode is not None:
             querySTR_mode = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensor_mode}')"
-    else:
-        querySTR_mode = ""
+            ##querySTR_mode = f" and contains(Name, '_{sensor_mode}_')"
+        else:
+            querySTR_mode = ""
 
-    logger.debug(f"querySTR_mode: {querySTR_mode}")
+        # S1 product type
+        if product_type is not None:
+            querySTR_product_type = f" and contains(Name, '{product_type}')" 
+        else:
+            querySTR_product_type = ""
+
+        # processing level (S2 only)
+        querySTR_level = ""
+
+        # maximum cloud cover (S2 only)
+        querySTR_max_cloud = ""
+
+        logger.debug(f"querySTR_mode:         {querySTR_mode}")
+        logger.debug(f"querySTR_product_type: {querySTR_product_type}")
+        logger.debug(f"querySTR_level:        {querySTR_level}")
+        logger.debug(f"querySTR_max_cloud:    {querySTR_max_cloud}")
 
     # ------------------------ #
 
-    # Sentinel-2 parameters
+    elif sensor == 'SENTINEL-2':
 
-    if sensor == 'SENTINEL-2':
+        # sensor mode (S1 only)
+        querySTR_mode = ""
 
-        # cloud cover
+        # S2 product type
+        if product_type is not None:
+            querySTR_product_type = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{product_type}')"
+            querySTR_product_type = f" and contains(Name, 'MSIL{processing_level}')"
+        else:
+            querySTR_product_type = ""
+
+        # processing level
+        if processing_level is not None:
+            querySTR_level = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{processing_level}')"
+            querySTR_level = f" and contains(Name, 'MSIL{processing_level}')"
+        else:
+            querySTR_level = ""
+
+        # maximum cloud cover
         querySTR_max_cloud = " and " + f"Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {max_cloud_cover})"
-    else:
-        querySTR_max_cloud = ""
 
-
-    logger.debug(f"querySTR_max_cloud: {querySTR_max_cloud}")
+        logger.debug(f"querySTR_mode:         {querySTR_mode}")
+        logger.debug(f"querySTR_product_type: {querySTR_product_type}")
+        logger.debug(f"querySTR_level:        {querySTR_level}")
+        logger.debug(f"querySTR_max_cloud:    {querySTR_max_cloud}")
 
     # ------------------------ #
 
@@ -403,7 +451,7 @@ def search_CDSE_catalogue(
     # ------------------------ #
 
     # build full query string
-    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_max_cloud}{querySTR_mode}{querySTR_product_type}{querySTR_level}{querySTR_time}{querySTR_expand_attributes}{querySTR_max_results}"
+    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_time}{querySTR_mode}{querySTR_product_type}{querySTR_level}{querySTR_max_cloud}{querySTR_expand_attributes}{querySTR_max_results}"
 
     logger.info(f"Full query url: {querySTR}")
 
@@ -418,10 +466,17 @@ def search_CDSE_catalogue(
     logger.info(f"Query found {len(product_list)} products")
 
     if max_results<=len(product_list):
-        logger.info(f"Number of products exceeds maximum number")
-        logger.info(f"Access next query url at 'response_json['@odata.nextLink']")
+        logger.warning(f"Number of products exceeds maximum number")
+        logger.warning(f"Access next query url at 'response_json['@odata.nextLink']")
 
     return response_json
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+# PRODUCT DOWNLOAD
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
@@ -449,7 +504,7 @@ def download_product_from_cdse(product, download_dir, username, password, overwr
         logger.error(f"Expected product type 'dict' but received {type(product)}")
         return
 
-    logger.info(f"Preparing to download product: {product['Name']}")
+    logger.info(f"Product to download: {product['Name']}")
 
     # check download_dir
     download_dir = pathlib.Path(download_dir)
@@ -482,6 +537,7 @@ def download_product_from_cdse(product, download_dir, username, password, overwr
     session.headers.update(headers)
     response = session.get(url, headers=headers, stream=True)
 
+    logger.info("Downloading ...")
     with open(download_zip_path, "wb") as file:
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
@@ -513,7 +569,7 @@ def download_product_list_from_cdse(product_list, download_dir, username, passwo
 
     # check product_list for download
     if type(product_list) is not list:
-        logger.error(f"Expected product_list type 'list' but received {type(product)}")
+        logger.error(f"Expected product_list type 'list' but received {type(product_list)}")
         return
 
     # get number of entries
@@ -531,7 +587,6 @@ def download_product_list_from_cdse(product_list, download_dir, username, passwo
             password,
             overwrite=overwrite,
             chunk_size=chunk_size)
-
 
     return
 

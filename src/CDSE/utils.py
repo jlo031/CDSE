@@ -1,4 +1,4 @@
-# ---- This is <result_utils.py> ----
+# ---- This is <utils.py> ----
 
 """
 Utils for handling search and download results from CDSE.
@@ -46,4 +46,4 @@ def get_product_names_from_response_json(response_json, loglevel='INFO'):
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# ---- End of <result_utils.py> ----
+# ---- End of <utils.py> ----

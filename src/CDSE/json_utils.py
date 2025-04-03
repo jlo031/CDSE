@@ -17,7 +17,7 @@ import re
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def write_response_dict_2_json(response_dict, output_file, loglevel = 'INFO'):
+def write_response_dict_2_json(response_dict, output_file):
     """
     Write dictionary to json file
 
@@ -25,12 +25,7 @@ def write_response_dict_2_json(response_dict, output_file, loglevel = 'INFO'):
     ----------
     response_dict : dictionary with CDSE response
     output_file : output json json file
-    loglevel : loglevel setting (default='INFO')
     """    
-
-    # remove default logger handler and add personal one
-    logger.remove()
-    logger.add(sys.stderr, level=loglevel)
 
     if type(response_dict) is not dict:
         logger.error(f"Expected input type 'dict' but received {type(response_dict)}")
@@ -48,23 +43,18 @@ def write_response_dict_2_json(response_dict, output_file, loglevel = 'INFO'):
 
 
 
-def read_response_dict_from_json(json_path, loglevel = 'INFO'):
+def read_response_dict_from_json(json_path):
     """
     Load a json file into a dictionary
 
     Parameters
     ----------
     json_path : path to json file
-    loglevel : loglevel setting (default='INFO')
 
     Returns
     -------
     json_obj : dictionary with json data
     """
-
-    # remove default logger handler and add personal one
-    logger.remove()
-    logger.add(sys.stderr, level=loglevel)
 
     json_path  = pathlib.Path(json_path).resolve()
 
@@ -81,23 +71,18 @@ def read_response_dict_from_json(json_path, loglevel = 'INFO'):
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def read_geojson(geojson_path, loglevel = 'INFO'):
+def read_geojson(geojson_path):
     """
     Load a GeoJSON file into geojson object
 
     Parameters
     ----------
     geojson_path : path to geojson file
-    loglevel : loglevel setting (default='INFO')
 
     Returns
     -------
     geojson_obj : dictionary with geojson data
     """
-
-    # remove default logger handler and add personal one
-    logger.remove()
-    logger.add(sys.stderr, level=loglevel)
 
     geojson_path  = pathlib.Path(geojson_path).resolve()
 
