@@ -143,7 +143,6 @@ print("\n--------------------------------------")
 print("---- TEST CDSE CATALOGUE DOWNLOAD ----")
 print("--------------------------------------\n")
 
-
 # get username and password
 CDSE_user = "johannes.p.lohse@uit.no"
 CDSE_passwd = "Dummy_Password123"
