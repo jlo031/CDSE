@@ -115,7 +115,6 @@ def convert_geojson_obj_2_wkt(geojson_obj, decimals=4):
     aoi_string : well-known text string representation of the geometry
     """
 
-
     # check contents of geojson data and read single or multiple geometries
     if "coordinates" in geojson_obj:
         logger.debug(f"geojson data contains coordinates and geometry type directly")
@@ -164,7 +163,7 @@ def convert_geojson_obj_2_wkt(geojson_obj, decimals=4):
 
 def get_aoi_string_from_geojson(geojson_path, decimals=4):
     """
-    Convert content of a GeoJSON fileo to well-known text.
+    Convert content of a GeoJSON file to well-known text.
     Intended for use with OpenSearch queries.
     3D points are converted to 2D.
 
@@ -181,6 +180,43 @@ def get_aoi_string_from_geojson(geojson_path, decimals=4):
     geojson_obj = read_geojson(geojson_path)
 
     aoi_string = convert_geojson_obj_2_wkt(geojson_obj, decimals=decimals)
+
+    return aoi_string
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+def get_aoi_string_from_lat_lon_dict(lat_lon_dict, decimals=4):
+    """
+    Convert lat/lon keys from dictionary to well-known text.
+    Intended for use with OpenSearch queries.
+
+    Parameters
+    ----------
+    lat_lon_dict : input dictionary with 'lat' and 'lon' keys
+    decimals : number of decimal to round coordinate to (default=4)
+
+    Returns
+    -------
+    aoi_string : Well-Known Text string representation of the geometry
+    """
+
+    if type(lat_lon_dict) is not dict:
+        logger.error(f"Expected input of type 'dict', but received type '{type(lat_lon_dict)}'")
+        ##return aoi_string
+ 
+    if not 'lat' in lat_lon_dict.keys() or not 'lon' in lat_lon_dict.keys():
+       logger.error(f"Input dictionary must contain 'lat' and 'lon' keys")
+       ##return aoi_string
+
+    # combine lat lon to dictionary of type geojson feature (type: 'POINT')
+    D = dict()
+    D['type'] = 'Point'
+    D['coordinates'] = [lat_lon_dict['lon'], lat_lon_dict['lat']]
+
+    aoi_string = convert_geojson_obj_2_wkt(D, decimals=decimals)
+
+    logger.debug(f"aoi_string: {aoi_string}")
 
     return aoi_string
 

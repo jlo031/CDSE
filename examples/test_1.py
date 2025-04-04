@@ -24,6 +24,9 @@ geojson_file_list = [
     'roi_hinlopen.geojson',
     'roi_multiple.geojson',
     'roi_svalbard.geojson',
+    'roi_points.geojson',
+    'roi_point_svalbard.geojson',
+    'roi_point_antarctica.geojson',
 ]
 
 for geojson_file in geojson_file_list:

@@ -23,23 +23,72 @@ import CDSE.access_token_credentials as CDSE_atc
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-print("\n-----------------------------------")
-print("---- TEST CDSE CATALOGUE QUERY ----")
-print("-----------------------------------\n")
+print("\n-------------------------------------------------")
+print("---- TEST CDSE CATALOGUE QUERY FROM LAT/LON ----")
+print("------------------------------------------------\n")
 
 data_collection = "Sentinel-1"
-geojson_path = 'roi_svalbard.geojson'
-start_date = "2022-06-01"
-end_date = "2022-06-06"
+L = dict()
+L['lat'] = 80.461723
+L['lon'] = -15.00032
+start_date = "2022-06-02"
+end_date = "2022-06-04"
 start_time = "02:00:00"
 end_time = "15:00:00"
-sensor_mode = None
+sensor_mode = 'EW'
 processing_level = '1'
-product_type = 'SLC'
+product_type = 'GRD'
 max_cloud_cover = 100
-max_results = 8
+max_results = 100
 expand_attributes = True
-loglevel = 'DEBUG'
+loglevel = 'INFO'
+
+response_json = CDSE_sd.search_CDSE_catalogue(
+    sensor = data_collection,
+    area = L,
+    start_date = start_date,
+    end_date = end_date,
+    start_time = start_time,
+    end_time = end_time,
+    sensor_mode = sensor_mode,
+    product_type = product_type,
+    processing_level = processing_level,
+    max_cloud_cover = max_cloud_cover,
+    max_results = max_results,
+    expand_attributes = expand_attributes,
+    loglevel = loglevel
+)
+
+logger.info(f"'response_json' has keys: {response_json.keys()}")
+
+for p in response_json['value']:
+    print(f"{p['Name']}")
+
+sys.exit()
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+print("\n------------------------------------------------")
+print("---- TEST CDSE CATALOGUE QUERY FROM GEOJSON ----")
+print("------------------------------------------------\n")
+
+data_collection = "Sentinel-1"
+geojson_path = 'roi_point_svalbard.geojson'
+geojson_path = 'roi_point_antarctica.geojson'
+geojson_path = 'roi_points.geojson'
+
+start_date = "2022-06-02"
+end_date = "2022-06-04"
+start_time = "02:00:00"
+end_time = "15:00:00"
+sensor_mode = 'EW'
+processing_level = '1'
+product_type = 'GRD'
+max_cloud_cover = 100
+max_results = 100
+expand_attributes = True
+loglevel = 'INFO'
 
 response_json = CDSE_sd.search_CDSE_catalogue(
     sensor = data_collection,
@@ -100,7 +149,7 @@ CDSE_user = "johannes.p.lohse@uit.no"
 CDSE_passwd = "Dummy_Password123"
 
 # download dir
-download_dir = "/home/jo/temporary_downloads"
+download_dir = "/home/johannes/temporary_downloads"
 
 # make sure download_dir exists
 download_dir = pathlib.Path(download_dir).resolve()

@@ -122,7 +122,7 @@ def check_CDSE_request_parameters(
     Parameters
     ----------
     sensor : sensor collection to search
-    area : geojson file with search area
+    area : geojson file with search area or dict with 'lat'/'lon' keys
     start_date : start date, format YYYY-MM-DD
     end_date : end date, format YYYY-MM-DD
     start_time : start time, format hh:mm:ss
@@ -160,13 +160,18 @@ def check_CDSE_request_parameters(
 
     # area
     logger.debug(f"Checking input 'area': {area}")
-    geojson_path  = pathlib.Path(area).resolve()
-    if not geojson_path.exists():
-        logger.error(f"Cannot find search area file: '{geojson_path}'")
-        return valid_parameters
-    if not geojson_path.suffix.endswith('json'):
-        logger.error(f"Input 'area' must be a json file, but file ending is '{geojson_path.suffix}'")
-        return valid_parameters
+    if type(area) is dict:
+        if not 'lat' in area.keys() or not 'lon' in area.keys():
+            logger.error(f"Area given as a dictionary must contain 'lat' and 'lon' keys")
+            return valid_parameters
+    else:
+        geojson_path  = pathlib.Path(area).resolve()
+        if not geojson_path.exists():
+            logger.error(f"Cannot find search area file: '{geojson_path}'")
+            return valid_parameters
+        if not geojson_path.suffix.endswith('json'):
+            logger.error(f"Input 'area' must be a json file, but file ending is '{geojson_path.suffix}'")
+            return valid_parameters
 
     # start_date and end_date
     for test_date in [start_date, end_date]:
@@ -302,7 +307,7 @@ def search_CDSE_catalogue(
     Parameters
     ----------
     sensor : sensor collection to search (SENTINEL-1, SENTINEL-2)
-    area : geojson file with search area
+    area : geojson file with search area or dict with 'lat'/'lon' keys
     start_date : start date, format YYYY-MM-DD
     end_date : end date, format YYYY-MM-DD
     start_time : start time, format hh:mm:ss (default="00:00:00")
@@ -356,7 +361,10 @@ def search_CDSE_catalogue(
 # -------------------------------------------------------------------------- #
 
     # read aoi string
-    aoi = CDSE_json.get_aoi_string_from_geojson(area, decimals=4)
+    if type(area) is dict:
+        aoi = CDSE_json.get_aoi_string_from_lat_lon_dict(area, decimals=4)
+    else:
+        aoi = CDSE_json.get_aoi_string_from_geojson(area, decimals=4)
 
 # -------------------------------------------------------------------------- #
 
