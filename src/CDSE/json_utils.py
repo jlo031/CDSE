@@ -4,7 +4,6 @@
 json and geojson utils for search and download from CDSE.
 """
 
-import sys
 import pathlib
 
 from loguru import logger
@@ -40,8 +39,8 @@ def write_response_dict_2_json(response_dict, output_file):
 
     return
 
-
-
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 
 def read_response_dict_from_json(json_path):
     """
@@ -84,9 +83,9 @@ def read_geojson(geojson_path):
     geojson_obj : dictionary with geojson data
     """
 
-    geojson_path  = pathlib.Path(geojson_path).resolve()
+    geojson_path = pathlib.Path(geojson_path).resolve()
 
-    if not geojson_path.exists():
+    if not geojson_path.is_file():
         logger.error(f'Cannot find geojson_path: {geojson_path}')
         geojson_obj = []
         return geojson_obj
@@ -203,11 +202,11 @@ def get_aoi_string_from_lat_lon_dict(lat_lon_dict, decimals=4):
 
     if type(lat_lon_dict) is not dict:
         logger.error(f"Expected input of type 'dict', but received type '{type(lat_lon_dict)}'")
-        ##return aoi_string
+        return aoi_string
  
     if not 'lat' in lat_lon_dict.keys() or not 'lon' in lat_lon_dict.keys():
        logger.error(f"Input dictionary must contain 'lat' and 'lon' keys")
-       ##return aoi_string
+       return aoi_string
 
     # combine lat lon to dictionary of type geojson feature (type: 'POINT')
     D = dict()

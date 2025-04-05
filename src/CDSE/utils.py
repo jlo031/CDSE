@@ -12,23 +12,18 @@ from loguru import logger
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-def get_product_names_from_response_json(response_json, loglevel='INFO'):
+def get_product_names_from_response_json(response_json):
     """
     Extract list of product names from CDSE response in json format (dict)
 
     Parameters
     ----------
     response_json : CDSE response in json format (dict)
-    loglevel : loglevel setting (default='INFO')
 
     Returns
     -------
     product_names : list of product names
     """    
-
-    # remove default logger handler and add personal one
-    logger.remove()
-    logger.add(sys.stderr, level=loglevel)
 
     # initalize empty list
     product_names = []
@@ -39,7 +34,6 @@ def get_product_names_from_response_json(response_json, loglevel='INFO'):
     for product in product_list:
         logger.debug(f"Appending current product name: {product['Name']}")
         product_names.append(product['Name'])
-
 
     return product_names
 

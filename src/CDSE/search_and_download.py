@@ -82,7 +82,6 @@ def search_CDSE_catalogue_by_name(product_name, loglevel='INFO'):
     querySTR = f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products?$filter=Name eq '{product_name}'"
     logger.debug(f"querySTR: {querySTR}")
 
-
     # search the data collection
     response_json = requests.get(querySTR).json()
 

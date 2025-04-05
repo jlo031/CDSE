@@ -1,10 +1,9 @@
-# ---- This is <test_1.py> ----
+# ---- This is <test_aoi_functions.py> ----
 
 """
-Test CDSE module
+Test CDSE module aoi to wkt functions.
 """
 
-import sys
 import pathlib
 from loguru import logger
 
@@ -16,7 +15,7 @@ import CDSE.access_token_credentials as CDSE_atc
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-print("\n-------------------------------------------")
+print("\n\n-------------------------------------------")
 print("---- TEST READING AOI WKT FROM GEOJSON ----")
 print("-------------------------------------------\n")
 
@@ -42,46 +41,19 @@ for geojson_file in geojson_file_list:
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-print("\n------------------------------")
-print("---- TEST PARAMETER CHECK ----")
-print("------------------------------\n")
+print("\n\n-------------------------------------------")
+print("---- TEST READING AOI WKT FROM LAT/LON ----")
+print("-------------------------------------------\n")
 
-# Adjust parameters to test propper functionality
+L = dict()
+L['lat'] = 80.461723
+L['lon'] = -15.00032
 
-data_collection = "SENTINEL-2"
-geojson_path = 'roi_svalbard.geojson'
-start_date = "2022-06-01"
-end_date = "2022-06-06"
-start_time = "02:00:00"
-end_time = "15:00:00"
-sensor_mode = 'EW'
-processing_level = '1C'
-product_type = '1C'
-max_cloud_cover = 100
-max_results = 1000
-expand_attributes = True
-loglevel = 'DEBUG'
+aoi = CDSE_json.get_aoi_string_from_lat_lon_dict(L, decimals=4)
 
-# check the parameters defined above
-status = CDSE_sd.check_CDSE_request_parameters(
-    sensor = data_collection,
-    area = geojson_path,
-    start_date = start_date,
-    end_date = end_date,
-    start_time = start_time,
-    end_time = end_time,
-    sensor_mode = sensor_mode,
-    product_type = product_type,
-    processing_level = processing_level,
-    max_cloud_cover = max_cloud_cover,
-    max_results = max_results,
-    expand_attributes = expand_attributes,
-    loglevel = loglevel
-)
-
-logger.info(f"Parameter check status is '{status}'\n")
+print(f"{aoi}\n")
 
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
-# ---- End of <test_1.py> ----
+# ---- End of <test_aoi_functions.py> ----
