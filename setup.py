@@ -14,11 +14,12 @@ setup(
     license = "The Ask Johannes Before You Do Anything License",
     long_description=read('README.md'),
     install_requires = [
+        'loguru',
         'requests',
         'geojson',
         'geomet',
+        'python-dotenv',
         'pathlib',
-        'loguru',
         'ipython',
     ],
     packages = find_packages(where='src'),
