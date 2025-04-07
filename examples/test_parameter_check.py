@@ -22,7 +22,7 @@ print("--------------------------------\n")
 # Adjust parameters to test propper functionality
 
 data_collection = "SENTINEL-2"
-geojson_path = 'roi_svalbard.geojson'
+geojson_path = 'ROIs/roi_svalbard.geojson'
 start_date = "2022-06-01"
 end_date = "2022-06-06"
 start_time = "02:00:00"
@@ -66,7 +66,7 @@ print("--------------------------------\n")
 # Adjust parameters to test propper functionality
 
 data_collection = "SENTINEL-1"
-geojson_path = 'roi_svalbard.geojson'
+geojson_path = 'ROIs/roi_svalbard.geojson'
 start_date = "2022-06-01"
 end_date = "2022-06-06"
 start_time = "02:00:00"

@@ -20,12 +20,12 @@ print("---- TEST READING AOI WKT FROM GEOJSON ----")
 print("-------------------------------------------\n")
 
 geojson_file_list = [
-    'roi_hinlopen.geojson',
-    'roi_multiple.geojson',
-    'roi_svalbard.geojson',
-    'roi_points.geojson',
-    'roi_point_svalbard.geojson',
-    'roi_point_antarctica.geojson',
+    'ROIs/roi_hinlopen.geojson',
+    'ROIs/roi_multiple.geojson',
+    'ROIs/roi_svalbard.geojson',
+    'ROIs/roi_points.geojson',
+    'ROIs/roi_point_svalbard.geojson',
+    'ROIs/roi_point_antarctica.geojson',
 ]
 
 for geojson_file in geojson_file_list:

@@ -65,9 +65,9 @@ print("---- TEST CDSE CATALOGUE QUERY FROM GEOJSON ----")
 print("------------------------------------------------\n")
 
 data_collection = "Sentinel-1"
-geojson_path = 'roi_point_svalbard.geojson'
-geojson_path = 'roi_point_antarctica.geojson'
-geojson_path = 'roi_points.geojson'
+geojson_path = 'ROIs/roi_point_svalbard.geojson'
+geojson_path = 'ROIs/roi_point_antarctica.geojson'
+geojson_path = 'ROIs/roi_points.geojson'
 
 start_date = "2022-06-02"
 end_date = "2022-06-04"
@@ -130,12 +130,11 @@ print("\n\n--------------------------------------")
 print("---- TEST CDSE CATALOGUE DOWNLOAD ----")
 print("--------------------------------------\n")
 
-# get username and password
-CDSE_user = "johannes.p.lohse@uit.no"
-CDSE_passwd = "Dummy_Password123"
+# get username and password from local .env file
+CDSE_user, CDSE_passwd = CDSE_utils.get_user_and_passwd(dotenv_path = '.env')
 
 # download dir
-download_dir = "/home/johannes/temporary_downloads"
+download_dir = "/home/jo/temporary_downloads"
 
 # make sure download_dir exists
 download_dir = pathlib.Path(download_dir).resolve()
