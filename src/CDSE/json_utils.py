@@ -222,4 +222,29 @@ def get_aoi_string_from_lat_lon_dict(lat_lon_dict, decimals=4):
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+def get_polygon_overlap(p1, p2):
+    """
+    Calculate the percentage of polygon 1 that is within polygon 2
+
+    Parameters
+    ----------
+    p1 : Polygon 1
+    p2 : Polygon 2
+
+    Returns
+    -------
+    perc_overlap : Overlap in %
+    """
+
+    # get overlapping polygon
+    overlap = p1.intersection(p2)
+
+    # get percentage of area overlap
+    perc_overlap = overlap.area / p1.area
+
+    return perc_overlap
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
 # ---- End of <json_utils.py> ----
