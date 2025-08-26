@@ -421,7 +421,7 @@ def search_CDSE_catalogue(
         # S2 product type
         if product_type is not None:
             querySTR_product_type = " and " + f"Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq 'S2MSI{product_type}')"
-            querySTR_product_type = f" and contains(Name, 'MSIL{processing_level}')"
+            querySTR_product_type = f" and contains(Name, 'MSIL{product_type}')"
         else:
             querySTR_product_type = ""
 
