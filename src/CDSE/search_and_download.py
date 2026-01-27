@@ -404,7 +404,7 @@ def search_CDSE_catalogue(
 
         # S1 relative orbit number
         if relative_orbit is not None:
-            querySTR_rel_orbit = " and " + f"Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.IntegerAttribute/Value eq '{relative_orbit}')"
+            querySTR_rel_orbit = " and " + f"Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {relative_orbit})"
         else:
             querySTR_rel_orbit = ""
 
