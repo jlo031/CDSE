@@ -295,6 +295,7 @@ def search_CDSE_catalogue(
     sensor_mode = None,
     product_type = None,
     processing_level = None,
+    rel_orbit = None,
     max_cloud_cover = 100,
     max_results = 1000,
     expand_attributes = True,
@@ -314,6 +315,7 @@ def search_CDSE_catalogue(
     sensor_mode : sensor mode (default=None)
     product_type : product type (default=None)
     processing_level : data processing level (default=None)
+    rel_orbit : relative orbit number (for repeat passes) (default=None)
     max_cloud_cover : maximum cloud cover (default=100)
     max_results : maximum number of items returned from a query
     expand_attributes : see the full metadata of each returned result (default=True)
@@ -400,6 +402,12 @@ def search_CDSE_catalogue(
         else:
             querySTR_product_type = ""
 
+        # S1 relative orbit number
+        if relative_orbit is not None:
+            querySTR_rel_orbit = " and " + f"Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq '{rel_orbit}')"
+        else:
+            querySTR_rel_orbit = ""
+
         # processing level (S2 only)
         querySTR_level = ""
 
@@ -408,6 +416,7 @@ def search_CDSE_catalogue(
 
         logger.debug(f"querySTR_mode:         {querySTR_mode}")
         logger.debug(f"querySTR_product_type: {querySTR_product_type}")
+        logger.debug(f"querySTR_rel_orbit:    {querySTR_rel_orbit}")
         logger.debug(f"querySTR_level:        {querySTR_level}")
         logger.debug(f"querySTR_max_cloud:    {querySTR_max_cloud}")
 
@@ -417,6 +426,9 @@ def search_CDSE_catalogue(
 
         # sensor mode (S1 only)
         querySTR_mode = ""
+
+        # relative orbit (S1 only)
+        querySTR_rel_orbit = ""
 
         # S2 product type
         if product_type is not None:
@@ -437,6 +449,7 @@ def search_CDSE_catalogue(
 
         logger.debug(f"querySTR_mode:         {querySTR_mode}")
         logger.debug(f"querySTR_product_type: {querySTR_product_type}")
+        logger.debug(f"querySTR_rel_orbit:    {querySTR_rel_orbit}")
         logger.debug(f"querySTR_level:        {querySTR_level}")
         logger.debug(f"querySTR_max_cloud:    {querySTR_max_cloud}")
 
@@ -458,7 +471,7 @@ def search_CDSE_catalogue(
     # ------------------------ #
 
     # build full query string
-    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_time}{querySTR_mode}{querySTR_product_type}{querySTR_level}{querySTR_max_cloud}{querySTR_expand_attributes}{querySTR_max_results}"
+    querySTR = f"{querySTR_sensor}{querySTR_area}{querySTR_time}{querySTR_mode}{querySTR_product_type}{querySTR_rel_orbit}{querySTR_level}{querySTR_max_cloud}{querySTR_expand_attributes}{querySTR_max_results}"
 
     logger.info(f"Full query url: {querySTR}")
 
