@@ -295,7 +295,7 @@ def search_CDSE_catalogue(
     sensor_mode = None,
     product_type = None,
     processing_level = None,
-    rel_orbit = None,
+    relative_orbit = None,
     max_cloud_cover = 100,
     max_results = 1000,
     expand_attributes = True,
@@ -315,7 +315,7 @@ def search_CDSE_catalogue(
     sensor_mode : sensor mode (default=None)
     product_type : product type (default=None)
     processing_level : data processing level (default=None)
-    rel_orbit : relative orbit number (for repeat passes) (default=None)
+    relative_orbit : relative orbit number (for repeat passes) (default=None)
     max_cloud_cover : maximum cloud cover (default=100)
     max_results : maximum number of items returned from a query
     expand_attributes : see the full metadata of each returned result (default=True)
