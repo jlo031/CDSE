@@ -131,7 +131,7 @@ def get_product_footprint_and_center(p):
         logger.debug("Footprint is single Polygon.")
         centroid = polygon.centroid
         center = [centroid.y, centroid.x]
-    if isinstance(polygon, MultiPolygon):
+    elif isinstance(polygon, MultiPolygon):
         logger.debug("Footprint is MultiPolygon.")
         centroids = []
         center = []
