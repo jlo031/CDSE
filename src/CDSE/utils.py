@@ -86,7 +86,6 @@ def get_user_and_passwd(dotenv_path='.env'):
         logger.error("The environment variable 'CDSE_PASSWORD' is not set.")
         return CDSE_user, CDSE_passwd
 
-
     return CDSE_user, CDSE_passwd
 
 # -------------------------------------------------------------------------- #
@@ -127,13 +126,23 @@ def get_product_footprint_and_center(p):
 
     logger.debug(f"Read product's footprint polygon: {polygon}")
 
-    # Get the centroid of the polygon
-    centroid = polygon.centroid
-
-    logger.debug(f"Extracted polygon centroid: {centroid}")
-
-    # Extract the coordinates of the centroid
-    center = [centroid.y, centroid.x]
+    #Extract centroid of MultiPolygon or Polygon
+    if isinstance(polygon, Polygon):
+        logger.debug("Footprint is single Polygon.")
+        centroid = polygon.centroid
+        center = [centroid.y, centroid.x]
+    if isinstance(polygon, MultiPolygon):
+        logger.debug("Footprint is MultiPolygon.")
+        centroids = []
+        center = []
+        n_polygons = len(list(polygon.geoms))
+        logger.debug(f"MultiPolygon with {n_polygons} entries.")
+        for single_polygon in list(polygon.geoms):
+            centroids.append(single_polygon.centroid)
+            center.append([single_polygon.centroid.y, single_polygon.centroid.x])
+    else:
+        logger.error(f"Footprint of input must be Polygon or MultiPolygon.")
+        return  footprint, center
 
     return polygon, center
 
