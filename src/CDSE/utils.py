@@ -120,7 +120,7 @@ def get_product_footprint_and_center(p):
         return footprint, center
 
     # Get footprint of example product
-    footprint = p["Footprint"].split(";")[1]
+    footprint = p["Footprint"].split(";")[1].strip("'")
 
     # Load the polygon using shapely
     polygon = loads(footprint)
