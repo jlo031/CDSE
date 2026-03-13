@@ -13,8 +13,7 @@ Create anaconda environment:
     conda activate CDSE
 
     # install requirements
-    conda install -y loguru requests
-    conda install -y -c conda-forge geojson geomet python-dotenv
+    conda install -y -c conda-forge loguru requests geojson geomet python-dotenv shapely
     pip install ipython
 
 ### Installation
