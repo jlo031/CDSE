@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from shapely.wkt import loads
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 import json
 
 # -------------------------------------------------------------------------- #
@@ -157,8 +157,11 @@ def write_polygon_2_geojson(polygon, geojson_path):
     logger.debug("Exporting shapely.geometry.polygon.Polygon as geojson file")
 
     if not isinstance(polygon, Polygon):
-        logger.error(f"Expected input type shapely.geometry.polygon.Polygon, but received type: {type(polygon)}")
-        return False
+        if isinstance(polygon, MultiPolygon):
+            logger.warning:("Footprint crosses the dateline and is a multipolygon")
+        else:
+            logger.error(f"Expected input type shapely.geometry.polygon.Polygon or MultiPolygon, but received type: {type(polygon)}")
+            return False
 
     # Convert to GeoJSON format
     geojson_str = {
