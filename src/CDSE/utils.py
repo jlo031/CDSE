@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 
 from loguru import logger
 
+from shapely.wkt import loads
+from shapely.geometry import Polygon
+import json
+
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
@@ -88,6 +92,94 @@ def get_user_and_passwd(dotenv_path='.env'):
 # -------------------------------------------------------------------------- #
 # -------------------------------------------------------------------------- #
 
+def get_product_footprint_and_center(p):
+    """
+    Extract footprint and center from input product dict
 
+    Parameters
+    ----------
+    p : single product dict
+
+    Returns
+    -------
+    polygon : shapely.geometry.polygon.Polygon of product footprint
+    center : lat/lon of footprint central point as list ([lat, lon])
+    """
+
+    logger.debug("Extracting product footprint and central lat/lon")
+
+    # Initialize empty returns
+    footprint = center = []
+
+    if not type(p)==dict:
+        logger.error(f"Expected input type dict, but received type: {type(p)}")
+        return footprint, center
+
+    if not "Footprint" in p.keys():
+        logger.error(f"Product does not contain footprint information.")
+        return footprint, center
+
+    # Get footprint of example product
+    footprint = example_result[0]["Footprint"].split(";")[1]
+
+    # Load the polygon using shapely
+    polygon = loads(footprint)
+
+    logger.debug(f"Read product's footprint polygon: {polygon}")
+
+    # Get the centroid of the polygon
+    centroid = polygon.centroid
+
+    logger.debug(f"Extracted polygon centroid: {centroid}")
+
+    # Extract the coordinates of the centroid
+    center = [centroid.y, centroid.x]
+
+    return polygon, center
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
+
+def write_polygon_2_geojson(polygon, geojson_path):
+    """
+    Export a shapely.geometry.polygon.Polygon as geojson file.
+
+    Parameters
+    ----------
+    polygon : shapely.geometry.polygon.Polygon of product footprint
+    geojson_path : path to output geojson file
+
+    Returns
+    -------
+    geojson : True/False
+    """
+
+    logger.debug("Exporting shapely.geometry.polygon.Polygon as geojson file")
+
+    if not isinstance(polygon, Polygon):
+        logger.error(f"Expected input type shapely.geometry.polygon.Polygon, but received type: {type(polygon)}")
+        return False
+
+    # Convert to GeoJSON format
+    geojson_str = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": json.loads(json.dumps(polygon.__geo_interface__)),  # Use shapely's GeoJSON interface
+                "properties": {}
+            }
+        ]
+    }
+
+    # Save the GeoJSON to a file
+    with open(geojson_path, "w") as f:
+        json.dump(geojson_str, f, indent=4)
+    logger.debug(f"GeoJSON file saved as {geojson_path}")
+
+    return True
+
+# -------------------------------------------------------------------------- #
+# -------------------------------------------------------------------------- #
 
 # ---- End of <utils.py> ----
